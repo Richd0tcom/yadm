@@ -1,0 +1,7 @@
+   tracker_root = "/home/youruser/.dotfile-tracker"
+   
+   [[dotfiles]]
+   path = "~/.bashrc"
+   
+   [[dotfiles]]
+   path = "~/.vimrc"

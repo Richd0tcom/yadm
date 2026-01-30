@@ -27,12 +27,10 @@ func LoadConfig(path string) (*Config, error) {
 	
 	fullPath:= expandTilde(path)
 
-	
-
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 
 		//create new file
-		err := createDefaultConfig(path)
+		err := createDefaultConfig(fullPath)
 
 		if err != nil {
 			return &Config{}, err
@@ -94,8 +92,8 @@ func expandTilde(path string) string {
 
 	if strings.HasPrefix(path, "~/") {
 		return filepath.Join(
-			path[:2],
 			homeDir,
+			path[2:],
 		)
 	}
 

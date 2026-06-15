@@ -1,6 +1,9 @@
 package main
 
-import "github.com/richd0tcom/yadm/interrnal/config"
+import (
+	"github.com/richd0tcom/yadm/interrnal/config"
+	"github.com/richd0tcom/yadm/interrnal/storage"
+)
 
 // "fmt"
 // "os"
@@ -26,5 +29,7 @@ func main() {
     //     os.Exit(1)
     // }
 
-	config.LoadConfig("~/.dotfile-tracker/.config.toml")
+	config.LoadConfig("~/.dotfile-tracker/config.toml")
+
+    storage.NewBlobStore("~/.dotfile-tracker/")
 }

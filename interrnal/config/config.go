@@ -27,6 +27,8 @@ func LoadConfig(path string) (*Config, error) {
 	
 	fullPath:= expandTilde(path)
 
+	fmt.Println("full path : ", fullPath)
+
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 
 		//create new file

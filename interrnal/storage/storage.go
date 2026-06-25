@@ -18,7 +18,7 @@ func NewBlobStore(rootDir string) (*BlobStore, error) {
 
 	//create blob dir if not exist
 	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
-		err := os.MkdirAll(rootDir, 0755)
+		err := os.MkdirAll(rootDir, 0755) //TODO: make permission constant
 		if err != nil {
 			return nil, err
 		}
@@ -135,6 +135,10 @@ func atomicWrite(path string, content []byte) error {
 
 
 	return nil
+}
+
+func AtomicWrite(path string, content []byte) error {
+	return atomicWrite(path, content)
 }
 
 func computeHash(content []byte) string {

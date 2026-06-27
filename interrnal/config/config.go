@@ -11,6 +11,13 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+const (
+	DEFAULT_CONFIG_PATH         = "~/.dotfile-tracker/config.toml"
+	DEFAULT_TRACKER_ROOT = "~/.dotfile-tracker/"
+	SNAPSHOT_FOLDER      = "snapshots"
+	BLOB_FOLDER          = "blobs"
+)
+
 //go:embed sample-config.toml
 var configBytes []byte
 
@@ -27,7 +34,6 @@ func LoadConfig(path string) (*Config, error) {
 	
 	fullPath:= expandTilde(path)
 
-	fmt.Println("full path : ", fullPath)
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 
@@ -40,6 +46,21 @@ func LoadConfig(path string) (*Config, error) {
 
 		fmt.Printf("Created default config at: %s\n", fullPath)
 		fmt.Println("Please edit it to specify your dotfiles.")
+
+		//create default snapshot folder
+		snapshotDir := filepath.Join(expandTilde(DEFAULT_TRACKER_ROOT), SNAPSHOT_FOLDER)
+		if err := os.MkdirAll(snapshotDir, 0755); err != nil {
+			return &Config{}, err
+		}
+
+		//create default blob folder
+		blobDir := filepath.Join(expandTilde(DEFAULT_TRACKER_ROOT), BLOB_FOLDER)
+		if err := os.MkdirAll(blobDir, 0755); err != nil {
+			return &Config{}, err
+		}
+
+
+		//TODO: uninstall should remove all the created directories
 
 	}
 

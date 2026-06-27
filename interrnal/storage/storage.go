@@ -44,6 +44,12 @@ func (bs *BlobStore) Store(content []byte) (string, error) {
 		//verify if valid
 		return hashString, nil
 	}
+
+	err = createPrefixDirIfNotExist(bs.rootDir, hashString)
+	if err != nil {
+		return "", err
+	}
+
 	blobPath := bs.blobPath(hashString)
 
 	err = atomicWrite(blobPath, content)
@@ -144,4 +150,20 @@ func AtomicWrite(path string, content []byte) error {
 func computeHash(content []byte) string {
 	hashBytes := sha256.Sum256(content)
 	return hex.EncodeToString(hashBytes[:])
+}
+
+
+//returns the path for cleanup if storage fails
+func createPrefixDirIfNotExist(rootDir string, hash string) error {
+	prefix := hash[:2]
+	path:= filepath.Join(rootDir, prefix)
+
+	_, err := os.Stat(path)
+	if err != nil && os.IsNotExist(err) {
+		return  os.MkdirAll(path, 0755)
+	}
+
+
+
+	return nil
 }

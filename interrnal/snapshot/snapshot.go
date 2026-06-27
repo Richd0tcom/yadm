@@ -63,7 +63,8 @@ func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string)
 
 	snap.Author = currentUser.Username
 
-	snap.Files = make([]FileEntry, len(dotfiles))
+
+	snap.Files = make([]FileEntry, 0, len(dotfiles))
 
 	for _, df := range dotfiles {
 		entry := FileEntry{}
@@ -111,7 +112,7 @@ func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string)
 }
 
 func saveSnapshot(saveDir string, snap Snapshot) error {
-	path := filepath.Join(saveDir, snap.ID+".json")
+	path := filepath.Join(saveDir, snap.ID + ".json")
 
 	data, _ := json.Marshal(snap)
 

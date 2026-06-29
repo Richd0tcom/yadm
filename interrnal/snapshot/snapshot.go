@@ -3,6 +3,7 @@ package snapshot
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -46,11 +47,19 @@ func resolveAnchor(absPath string) (string, string) {
 	// didnt produce a path starting from the home dir (is this een possible?)
 }
 
-func formatMode(mode os.FileMode) string {
+func modeToString(mode os.FileMode) string {
 	return fmt.Sprintf("%04o", mode)
 }
 
-func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string) (Snapshot, error){
+func stringToMode(s string) (os.FileMode, error) {
+	mode, err := strconv.ParseUint(s, 8, 32)
+	if err != nil {
+		return 0, err
+	}
+	return os.FileMode(mode), nil
+}
+
+func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string) (Snapshot, error) {
 	snap := Snapshot{}
 
 	snap.Timestamp = time.Now().UnixMilli()
@@ -62,7 +71,6 @@ func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string)
 	}
 
 	snap.Author = currentUser.Username
-
 
 	snap.Files = make([]FileEntry, 0, len(dotfiles))
 
@@ -92,7 +100,7 @@ func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string)
 			continue
 		}
 		entry.Size = stat.Size()
-		entry.PermMode = formatMode(stat.Mode())
+		entry.PermMode = modeToString(stat.Mode())
 
 		hash, err := blobstore.Store(content)
 		if err != nil {
@@ -104,7 +112,7 @@ func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string)
 		snap.Files = append(snap.Files, entry)
 	}
 
-	if err = saveSnapshot(snapshotDir, snap); err!=nil {
+	if err = saveSnapshot(snapshotDir, snap); err != nil {
 		return Snapshot{}, err
 	}
 
@@ -112,9 +120,97 @@ func Create(dotfiles []string, blobstore *storage.BlobStore, snapshotDir string)
 }
 
 func saveSnapshot(saveDir string, snap Snapshot) error {
-	path := filepath.Join(saveDir, snap.ID + ".json")
+	path := filepath.Join(saveDir, snap.ID+".json")
 
 	data, _ := json.Marshal(snap)
 
 	return storage.AtomicWrite(path, data)
+}
+
+type Restore struct {
+	Path    string
+	Success bool
+	Error   string
+}
+
+func RestoreSnapshot(snapID string, snapshotDir string, blobstore *storage.BlobStore, dryrun bool) ([]Restore, error) {
+
+	var snap Snapshot
+	snapPath := filepath.Join(snapshotDir, snapID+".json")
+
+	data, err := os.ReadFile(snapPath)
+
+	if err != nil {
+
+	}
+	err = json.Unmarshal(data, &snap)
+
+	if err != nil {
+
+	}
+
+	results := make([]Restore, 0, len(snap.Files))
+
+	//TODO:  before restoring, we should probably snapshot the current state first.
+
+	for _, file := range snap.Files {
+		if file.Error != "" {
+			results = append(results, Restore{
+				Path:    file.AbsolutePath,
+				Success: false,
+				Error:   "skipped: errors present at snapshot time",
+			})
+			continue
+		}
+		if dryrun {
+			results = append(results, Restore{
+				Path:    file.AbsolutePath,
+				Success: true,
+				Error:   "dry-run: would restore",
+			})
+			continue
+		}
+
+		content, err := blobstore.Read(file.Hash)
+
+		if err != nil {
+			results = append(results, Restore{
+				Path:    file.AbsolutePath,
+				Success: false,
+				Error:   err.Error(),
+			})
+			continue
+		}
+
+		err = storage.AtomicWrite(file.AbsolutePath, content)
+
+		if err != nil {
+			results = append(results, Restore{
+				Path:    file.AbsolutePath,
+				Success: false,
+				Error:   err.Error(),
+			})
+			continue
+		}
+
+		mode, err := stringToMode(file.PermMode)
+
+		if err != nil {
+			log.Default().Printf("unable to parse file permission mode: %s ", err.Error())
+		}
+		err = os.Chmod(file.AbsolutePath, mode)
+
+		if err != nil {
+			log.Default().Printf("unable to restore file permission mode: %s ", err.Error())
+
+		}
+		results = append(results, Restore{
+			Path:    file.AbsolutePath,
+			Success: false,
+			Error:   "",
+		})
+
+	}
+
+	return results, nil
 }

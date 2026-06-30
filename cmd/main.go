@@ -4,9 +4,9 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/richd0tcom/yadm/interrnal/config"
-	"github.com/richd0tcom/yadm/interrnal/snapshot"
-	"github.com/richd0tcom/yadm/interrnal/storage"
+	"github.com/richd0tcom/yadm/internal/config"
+	"github.com/richd0tcom/yadm/internal/snapshot"
+	"github.com/richd0tcom/yadm/internal/storage"
 
 	"fmt"
 	"os"

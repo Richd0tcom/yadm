@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/richd0tcom/yadm/interrnal/storage"
+	"github.com/richd0tcom/yadm/internal/storage"
 	"github.com/richd0tcom/yadm/pkg/utils"
 )
 

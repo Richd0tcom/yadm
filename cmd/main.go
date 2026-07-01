@@ -34,16 +34,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	snapshotDir := filepath.Join(trackerRoot, config.SNAPSHOT_FOLDER)
-
 	//TODO: implement flags and robust argument parsing https://cobra.dev
 	command := os.Args[1]
 
 	switch command {
 	case "snapshot":
-		handleSnapshot(cfg, bs, snapshotDir)
+		handleSnapshot(cfg, bs)
 	case "list":
-		handleList(snapshotDir)
+		handleList()
 	case "restore":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: tracker restore <snapshotID>")
@@ -56,8 +54,12 @@ func main() {
 			dryRun = true
 		}
 		snapID := os.Args[2]
-		handleRestore(snapID, snapshotDir, bs, dryRun)
-
+		handleRestore(snapID, bs, dryRun)
+    case "diff":
+        if len(os.Args) < 4 {
+			fmt.Println("Usage: tracker restore <snapshotID-A> <snapshotID-B>")
+			os.Exit(1)
+		}
     
 
 	default:
@@ -66,7 +68,7 @@ func main() {
 	}
 }
 
-func handleSnapshot(cfg *config.Config, bs *storage.BlobStore, snapshotDir string) {
+func handleSnapshot(cfg *config.Config, bs *storage.BlobStore) {
 
 	var paths []string = make([]string, 0, len(cfg.Dotfiles))
 
@@ -75,7 +77,7 @@ func handleSnapshot(cfg *config.Config, bs *storage.BlobStore, snapshotDir strin
 		paths = append(paths, file.Path)
 	}
 
-	ss, err := snapshot.Create(paths, bs, snapshotDir)
+	ss, err := snapshot.Create(paths, bs, config.GetSnaphotDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,9 +92,9 @@ func handleSnapshot(cfg *config.Config, bs *storage.BlobStore, snapshotDir strin
 	}
 }
 
-func handleList(snapshotDir string) {
+func handleList() {
 
-	entries, err := os.ReadDir(snapshotDir)
+	entries, err := os.ReadDir(config.GetSnaphotDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,9 +109,9 @@ func handleList(snapshotDir string) {
 	}
 }
 
-func handleRestore(snapID, snapshotDir string, blobstore *storage.BlobStore, dryRun bool) {
+func handleRestore(snapID string, blobstore *storage.BlobStore, dryRun bool) {
 
-	restores, err := snapshot.RestoreSnapshot(snapID, snapshotDir, blobstore, dryRun)
+	restores, err := snapshot.RestoreSnapshot(snapID,blobstore, dryRun)
 
 	if err != nil {
 		log.Fatal(err)
@@ -125,3 +127,6 @@ func handleRestore(snapID, snapshotDir string, blobstore *storage.BlobStore, dry
 }
 
 
+func handleDiff(snapA, snapB string)  {
+
+}

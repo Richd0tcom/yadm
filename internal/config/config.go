@@ -18,6 +18,11 @@ const (
 	BLOB_FOLDER          = "blobs"
 )
 
+var (
+	snapshotDir string
+
+)
+
 //go:embed sample-config.toml
 var configBytes []byte
 
@@ -59,7 +64,6 @@ func LoadConfig(path string) (*Config, error) {
 			return &Config{}, err
 		}
 
-
 		//TODO: uninstall should remove all the created directories
 
 	}
@@ -75,6 +79,8 @@ func LoadConfig(path string) (*Config, error) {
 	if err := config.expandPaths(); err != nil {
 		return nil, fmt.Errorf("failed to expand paths: %w", err)
 	}
+
+	snapshotDir = filepath.Join(config.TrackerRoot, SNAPSHOT_FOLDER)
 
 	return &config, nil
 
@@ -125,4 +131,8 @@ func expandTilde(path string) string {
 	return path
 }
 
+
+func GetSnaphotDir() string {
+	return snapshotDir
+}
 

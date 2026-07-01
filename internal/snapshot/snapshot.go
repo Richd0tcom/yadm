@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/richd0tcom/yadm/interrnal/storage"
+	"github.com/richd0tcom/yadm/internal/config"
+	"github.com/richd0tcom/yadm/internal/storage"
 	"github.com/richd0tcom/yadm/pkg/utils"
 )
 
@@ -133,10 +134,10 @@ type Restore struct {
 	Error   string
 }
 
-func RestoreSnapshot(snapID string, snapshotDir string, blobstore *storage.BlobStore, dryrun bool) ([]Restore, error) {
+func RestoreSnapshot(snapID string, blobstore *storage.BlobStore, dryrun bool) ([]Restore, error) {
 
 	var snap Snapshot
-	snapPath := filepath.Join(snapshotDir, snapID+".json")
+	snapPath := filepath.Join(config.GetSnaphotDir(), snapID+".json")
 
 	data, err := os.ReadFile(snapPath)
 
@@ -213,4 +214,28 @@ func RestoreSnapshot(snapID string, snapshotDir string, blobstore *storage.BlobS
 	}
 
 	return results, nil
+}
+
+
+func ReadSnapshot(snapID string) (Snapshot,  error) {
+	var snap Snapshot
+	snapPath := filepath.Join(config.GetSnaphotDir(), snapID+".json")
+
+	data, err := os.ReadFile(snapPath)
+
+	if err != nil {
+
+		if os.IsNotExist(err) {
+			return Snapshot{}, fmt.Errorf("Snapshot not found, nothing to diff")
+		}
+		return Snapshot{}, fmt.Errorf("Error reading snapshot: %s", err)
+	}
+
+	err = json.Unmarshal(data, &snap)
+
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("Error unmarshaling snapshot: %s", err)
+	}
+
+	return snap , nil
 }

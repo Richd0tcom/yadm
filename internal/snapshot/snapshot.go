@@ -225,11 +225,16 @@ func ReadSnapshot(snapID string) (Snapshot,  error) {
 
 	if err != nil {
 
+		if os.IsNotExist(err) {
+			return Snapshot{}, fmt.Errorf("Snapshot not found, nothing to diff")
+		}
+		return Snapshot{}, fmt.Errorf("Error reading snapshot: %s", err)
 	}
+
 	err = json.Unmarshal(data, &snap)
 
 	if err != nil {
-
+		return Snapshot{}, fmt.Errorf("Error unmarshaling snapshot: %s", err)
 	}
 
 	return snap , nil

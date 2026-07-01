@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/richd0tcom/yadm/internal/config"
+	"github.com/richd0tcom/yadm/internal/diff"
 	"github.com/richd0tcom/yadm/internal/snapshot"
 	"github.com/richd0tcom/yadm/internal/storage"
 
@@ -55,12 +56,17 @@ func main() {
 		}
 		snapID := os.Args[2]
 		handleRestore(snapID, bs, dryRun)
-    case "diff":
-        if len(os.Args) < 4 {
+	case "diff":
+		if len(os.Args) < 4 {
 			fmt.Println("Usage: tracker restore <snapshotID-A> <snapshotID-B>")
 			os.Exit(1)
 		}
-    
+
+        var snapA, snapB string
+        snapA = os.Args[2]
+        snapB = os.Args[3]
+
+        handleDiff(snapA, snapB)
 
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
@@ -111,7 +117,7 @@ func handleList() {
 
 func handleRestore(snapID string, blobstore *storage.BlobStore, dryRun bool) {
 
-	restores, err := snapshot.RestoreSnapshot(snapID,blobstore, dryRun)
+	restores, err := snapshot.RestoreSnapshot(snapID, blobstore, dryRun)
 
 	if err != nil {
 		log.Fatal(err)
@@ -126,7 +132,19 @@ func handleRestore(snapID string, blobstore *storage.BlobStore, dryRun bool) {
 	}
 }
 
+func handleDiff(snapA, snapB string) {
 
-func handleDiff(snapA, snapB string)  {
+	sA, err := snapshot.ReadSnapshot(snapA)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	sB, err := snapshot.ReadSnapshot(snapB)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+    changes:= diff.DiffSnapshots(sA, sB)
+
+    diff.PrettyPrint(changes)
 }

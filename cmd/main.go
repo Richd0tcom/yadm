@@ -12,8 +12,6 @@ import (
 	"os"
 )
 
-
-
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: tracker <command>")
@@ -46,6 +44,22 @@ func main() {
 		handleSnapshot(cfg, bs, snapshotDir)
 	case "list":
 		handleList(snapshotDir)
+	case "restore":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: tracker restore <snapshotID>")
+			os.Exit(1)
+		}
+
+		dryRun := false
+
+		if len(os.Args) > 3 && os.Args[3] == "--dryrun" {
+			dryRun = true
+		}
+		snapID := os.Args[2]
+		handleRestore(snapID, snapshotDir, bs, dryRun)
+
+    
+
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		os.Exit(1)
@@ -55,7 +69,7 @@ func main() {
 func handleSnapshot(cfg *config.Config, bs *storage.BlobStore, snapshotDir string) {
 
 	var paths []string = make([]string, 0, len(cfg.Dotfiles))
-    
+
 	for _, file := range cfg.Dotfiles {
 
 		paths = append(paths, file.Path)
@@ -65,7 +79,6 @@ func handleSnapshot(cfg *config.Config, bs *storage.BlobStore, snapshotDir strin
 	if err != nil {
 		log.Fatal(err)
 	}
-
 
 	for _, snap := range ss.Files {
 
@@ -79,17 +92,36 @@ func handleSnapshot(cfg *config.Config, bs *storage.BlobStore, snapshotDir strin
 
 func handleList(snapshotDir string) {
 
-    entries, err := os.ReadDir(snapshotDir)
-    if err != nil {
+	entries, err := os.ReadDir(snapshotDir)
+	if err != nil {
 		log.Fatal(err)
 	}
 
-    if len(entries) == 0 {
-        fmt.Println("No snapshots found")
-        return
-    }
+	if len(entries) == 0 {
+		fmt.Println("No snapshots found")
+		return
+	}
 
-    for _, entry := range entries {
-        fmt.Printf(" %s \n", entry.Name())
-    }
+	for _, entry := range entries {
+		fmt.Printf(" %s \n", entry.Name())
+	}
 }
+
+func handleRestore(snapID, snapshotDir string, blobstore *storage.BlobStore, dryRun bool) {
+
+	restores, err := snapshot.RestoreSnapshot(snapID, snapshotDir, blobstore, dryRun)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, r := range restores {
+		if !r.Success {
+			fmt.Printf("WARN: %s  ->  %s \n", r.Path, r.Error)
+		} else {
+			fmt.Printf("OK[restored]: %s  \n", r.Path)
+		}
+	}
+}
+
+
